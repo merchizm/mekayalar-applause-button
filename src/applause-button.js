@@ -1,29 +1,27 @@
-import "document-register-element/build/document-register-element";
+import '@ungap/custom-elements';
 
-const VERSION = "3.3.0";
-const API = "https://api.applause-button.com";
+const VERSION = "0.1";
+const API = "http://127.0.0.1:8000/api";
 
-const getClaps = (api, url) =>
-  // TODO: polyfill for IE (not edge)
-  fetch(`${api}/get-claps` + (url ? `?url=${url}` : ""), {
+const getClaps = (api, type, id) =>
+  fetch(`${api}/get-claps?type=${encodeURIComponent(type)}&id=${id}`, {
     headers: {
       "Content-Type": "text/plain"
     }
   })
-    .then(response => response.text())
-    .then(res => Number(res));
+  .then(response => response.text())
+  .then(res => Number(res));
 
-const updateClaps = (api, claps, url) =>
-  // TODO: polyfill for IE (not edge)
-  fetch(`${api}/update-claps` + (url ? `?url=${url}` : ""), {
+  const updateClaps = (api, claps, type, id) =>
+  fetch(`${api}/update-claps?type=${encodeURIComponent(type)}&id=${id}`, {
     method: "POST",
     headers: {
       "Content-Type": "text/plain"
     },
-    body: JSON.stringify(`${claps},${VERSION}`)
+    body: JSON.stringify({clapsCount: claps, version: VERSION})
   })
-    .then(response => response.text())
-    .then(res => Number(res));
+  .then(response => response.text())
+  .then(res => Number(res));
 
 const arrayOfSize = size => new Array(size).fill(undefined);
 
@@ -123,7 +121,7 @@ class ApplauseButton extends HTMLCustomElement {
         );
         // send the updated clap count - checking the response to see if the server-held
         // clap count has actually incremented
-        updateClaps(this.api, increment, this.url).then(updatedClapCount => {
+        updateClaps(this.api, increment, this.type, this.id).then(updatedClapCount => {
           if (updatedClapCount === this._cachedClapCount) {
             // if the clap number as not incremented, disable further updates
             this.classList.add("clap-limit-exceeded");
@@ -182,7 +180,7 @@ class ApplauseButton extends HTMLCustomElement {
       }
     });
 
-    getClaps(this.api, this.url).then(clapCount => {
+    getClaps(this.api, this.type, this.id).then(clapCount => {
       this.classList.remove("loading");
       this._cachedClapCount = clapCount;
       initialClapCountResolve(clapCount);
@@ -248,9 +246,26 @@ class ApplauseButton extends HTMLCustomElement {
     }
   }
 
-  static get observedAttributes() {
-    return ["color"];
+  get type() {
+    return this.getAttribute("type");
   }
+
+  set type(value) {
+    this.setAttribute("type", value);
+  }
+
+  get id() {
+    return this.getAttribute("id");
+  }
+
+  set id(value) {
+    this.setAttribute("id", value);
+  }
+
+  static get observedAttributes() {
+    return ["color", "type", "id"];
+  }
+
 
   attributeChangedCallback(name, oldValue, newValue) {
     this._updateRootColor();

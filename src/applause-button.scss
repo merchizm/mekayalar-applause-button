@@ -32,9 +32,9 @@ applause-button {
       content: " ";
       display: block;
       border-radius: 50%;
-      border: 1px solid;
     }
     &:hover:after:not(.clap-limit-exceeded) {
+      border: 1px solid;
       border-color: inherit;
     }
   }
